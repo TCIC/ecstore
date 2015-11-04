@@ -1,0 +1,18 @@
+#!/bin/bash
+
+## MYSQL server configuration
+MYSQL_ROOT_PASSWORD=password
+MYSQL_DATABASE=ecstore
+MYSQL_USER=ecstore
+MYSQL_PASSWORD=password
+
+## ECSTORE configuration
+ECSTORE_SOURCE=
+ECSTORE_MYSQL=${ECSTORE_MYSQL:-ecstore-mysql}
+ECSTORE_MYSQL_VOLUME=${ECSTORE_MYSQL_VOLUME:-ecstore-mysql-volume}
+MYSQL_IMAGE=${MYSQL_IMAGE:-mysql:5.6}
+ECSTORE_NAME=${ECSTORE_NAME:-ecstore}
+ECSTORE_IMAGE=${ECSTORE_IMAGE:-ecstore:php53}
+NGINX_NAME=${NGINX_NAME:-proxy}
+NGINX_IMAGE_NAME=${NGINX_IMAGE_NAME:-nginx}
+
