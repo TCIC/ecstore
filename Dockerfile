@@ -107,7 +107,7 @@ RUN cp -p $PHPFPM_CONF.default $PHPFPM_CONF && \
 ENV RC_START /start.sh
 RUN echo "#!/bin/bash" >> $RC_START && \
     echo "chown -Rf www-data.www-data /usr/share/nginx/html" >> $RC_START && \
-    echo "php-fpm" >> $RC_START && \
+    echo "exec php-fpm" >> $RC_START && \
     chmod 755 $RC_START
 
 # setup volume
