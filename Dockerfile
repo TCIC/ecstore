@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
       curl \
       libmcrypt-dev \
+      libmemcached-dev \
       libmysqlclient-dev \
       libpcre3 \
       librecode0 \
@@ -49,6 +50,8 @@ RUN OPENSSL_VERSION="1.0.2d" \
       && rm -rf /tmp/*
 
 ENV PHP_VERSION 5.3.29
+ENV MEMCACHE_VERSION 2.2.0
+ENV REDIS_VERSION 2.2.7
 
 # php 5.3 needs older autoconf
 RUN buildDeps=" \
@@ -91,9 +94,21 @@ RUN buildDeps=" \
             --with-zlib \
       /usr/local/etc/php-fpm.conf&& make -j"$(nproc)" \
       && make install \
+      && cd /tmp && curl -SL "http://pecl.php.net/get/memcached-$MEMCACHE_VERSION.tgz" -o memcached.tgz \
+      && tar zxf memcached.tgz && cd /tmp/memcached-$MEMCACHE_VERSION && phpize \
+      && ./configure --enable-memcache --with-php-config=/usr/local/bin/php-config \
+      && make && make install \
+      && cp -p /usr/src/php/php.ini-production $PHP_INI_DIR/php.ini \
+      && sed -i "/;extension=php_zip.dll/a\extension=\/usr\/local\/lib\/php\/extensions\/no-debug-non-zts-20090626\/memcached.so" /usr/local/etc/php.ini \
+      && rm -rf /tmp/memcached* \
+      && cd /tmp && curl -SL "http://pecl.php.net/get/redis-$REDIS_VERSION.tgz" -o redis.tgz \
+      && tar zxf redis.tgz && cd /tmp/redis-$REDIS_VERSION && phpize \
+      && ./configure --with-php-config=/usr/local/bin/php-config && make && make install \
+      && sed -i "/;extension=php_zip.dll/a\extension=\/usr\/local\/lib\/php\/extensions\/no-debug-non-zts-20090626\/redis.so" /usr/local/etc/php.ini \
+      && rm -rf /tmp/redis* \
       && { find /usr/local/bin /usr/local/sbin -type f -executable -exec strip --strip-all '{}' + || true; } \
       && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false $buildDeps \
-      && make clean
+      && cd /usr/src/php && make clean
 
 # php-fpm config
 ENV PHPFPM_CONF /usr/local/etc/php-fpm.conf
@@ -114,8 +129,7 @@ RUN echo "#!/bin/bash" >> $RC_START && \
 VOLUME ["/usr/share/nginx/html"]
 
 # ecstore config
-RUN cp -p /usr/src/php/php.ini-production $PHP_INI_DIR/php.ini && \
-    cd /tmp && \
+RUN cd /tmp && \
     curl -sL "http://downloads.zend.com/guard/5.5.0/ZendGuardLoader-php-5.3-linux-glibc23-x86_64.tar.gz" -o ZendGuardLoader.tar.gz && \
     mkdir -p /usr/local/ext/php5 && tar zxf ZendGuardLoader.tar.gz && \
     cp -p /tmp/ZendGuardLoader-php-5.3-linux-glibc23-x86_64/php-5.3.x/ZendGuardLoader.so /usr/local/ext/php5 && \
