@@ -82,6 +82,7 @@ RUN buildDeps=" \
             --with-fpm-user=www-data \
             --with-fpm-group=www-data \
             --disable-cgi \
+            --enable-ftp \
             --enable-mysqlnd \
             --with-curl \
             --with-gd \
