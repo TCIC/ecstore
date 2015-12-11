@@ -38,7 +38,7 @@ RUN set -xe \
   done
 
 # compile openssl, otherwise --with-openssl won't work
-RUN OPENSSL_VERSION="1.0.2d" \
+RUN OPENSSL_VERSION="1.0.2e" \
       && cd /tmp \
       && mkdir openssl \
       && curl -sL "https://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz" -o openssl.tar.gz \
@@ -53,9 +53,10 @@ ENV PHP_VERSION 5.3.29
 ENV MEMCACHE_VERSION 2.2.0
 ENV REDIS_VERSION 2.2.7
 
-# php 5.3 needs older autoconf
+# php 5.3 build
 RUN buildDeps=" \
-                autoconf2.13 \
+                autoconf \
+                git \
                 libcurl4-openssl-dev \
                 libpcre3-dev \
                 libpng-dev \
@@ -101,12 +102,16 @@ RUN buildDeps=" \
       && make && make install \
       && cp -p /usr/src/php/php.ini-production $PHP_INI_DIR/php.ini \
       && sed -i "/;extension=php_zip.dll/a\extension=\/usr\/local\/lib\/php\/extensions\/no-debug-non-zts-20090626\/memcached.so" /usr/local/etc/php.ini \
-      && rm -rf /tmp/memcached* \
+      && cd /tmp && rm -rf /tmp/memcached* \
       && cd /tmp && curl -SL "http://pecl.php.net/get/redis-$REDIS_VERSION.tgz" -o redis.tgz \
       && tar zxf redis.tgz && cd /tmp/redis-$REDIS_VERSION && phpize \
       && ./configure --with-php-config=/usr/local/bin/php-config && make && make install \
       && sed -i "/;extension=php_zip.dll/a\extension=\/usr\/local\/lib\/php\/extensions\/no-debug-non-zts-20090626\/redis.so" /usr/local/etc/php.ini \
-      && rm -rf /tmp/redis* \
+      && cd /tmp && rm -rf /tmp/redis* \
+      && cd /tmp && git clone https://github.com/swoole/swoole-src.git \
+      && cd swoole-src && phpize && ./configure && make && make install \
+      && sed -i "/;extension=php_zip.dll/a\extension=\/usr\/local\/lib\/php\/extensions\/no-debug-non-zts-20090626\/swoole.so" /usr/local/etc/php.ini \
+      && cd /tmp && rm -rf /tmp/swoole* \
       && { find /usr/local/bin /usr/local/sbin -type f -executable -exec strip --strip-all '{}' + || true; } \
       && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false -o APT::AutoRemove::SuggestsImportant=false $buildDeps \
       && cd /usr/src/php && make clean
